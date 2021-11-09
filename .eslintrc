@@ -3,7 +3,8 @@
   "plugins": ["prettier"],
   "rules": {
     "prettier/prettier": ["warn", {
-      "singleQuote": true
+      "singleQuote": true,
+      "endOfLine":"auto"
     }],
     "import/first": 0
   },

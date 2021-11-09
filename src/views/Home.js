@@ -11,6 +11,7 @@ const Home = () => {
   const [pokemon, setPokemon] = useState([]);
   const [error, setError] = useState([]);
   const [term, setTerm] = useState('');
+  const [nextPage, setNextPage] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -18,15 +19,28 @@ const Home = () => {
         const response = await axios.get('https://pokeapi.co/api/v2/pokemon', {
           params: {
             offset: 0,
-            limit: 100,
+            limit: 20,
           },
         });
         setPokemon(response.data.results);
+        setNextPage(response.data.next);
       } catch (e) {
         setError(`Sorry, we couldn't load Pokemons`);
       }
     })();
   }, []);
+
+  const loadMore = () => {
+    (async () => {
+      try {
+        const response = await axios.get(nextPage);
+        setPokemon([...pokemon, ...response.data.results]);
+        setNextPage(response.data.next);
+      } catch (e) {
+        setError(`Sorry, we couldn't load Pokemons`);
+      }
+    })();
+  };
 
   return (
     <TermContext.Provider value={setTerm}>
@@ -51,6 +65,12 @@ const Home = () => {
             </div>
           )}
         </div>
+        <button
+          onClick={loadMore}
+          className="btn btn-primary ml-auto mr-auto d-block mb-5"
+        >
+          Load More
+        </button>
       </div>
     </TermContext.Provider>
   );
