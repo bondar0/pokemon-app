@@ -3,7 +3,6 @@ import axios from 'axios';
 import Title from 'components/Title/Title';
 import Pokemon from 'components/Card/Card';
 import Searchbar from 'components/Searchbar/Searchbar';
-import { v4 as uuidv4 } from 'uuid';
 
 export const TermContext = createContext();
 
@@ -11,36 +10,35 @@ const Home = () => {
   const [pokemon, setPokemon] = useState([]);
   const [error, setError] = useState([]);
   const [term, setTerm] = useState('');
-  const [nextPage, setNextPage] = useState(null);
+  const [nextPage, setNextPage] = useState(
+    'https://pokeapi.co/api/v2/pokemon?limit=20&offset=0'
+  );
+
+  const listPokemons = async () => {
+    try {
+      const response = await axios.get(nextPage);
+
+      setNextPage(response.data.next);
+
+      const pokemonObj = (data) => {
+        data.map(async (val) => {
+          const response = await axios.get(
+            `https://pokeapi.co/api/v2/pokemon/${val.name}`
+          );
+
+          setPokemon((pokeList) => [...pokeList, response.data]);
+        });
+      };
+
+      pokemonObj(response.data.results);
+    } catch (e) {
+      setError(`Sorry, we couldn't load Pokemons`);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await axios.get('https://pokeapi.co/api/v2/pokemon', {
-          params: {
-            offset: 0,
-            limit: 20,
-          },
-        });
-        setPokemon(response.data.results);
-        setNextPage(response.data.next);
-      } catch (e) {
-        setError(`Sorry, we couldn't load Pokemons`);
-      }
-    })();
+    listPokemons();
   }, []);
-
-  const loadMore = () => {
-    (async () => {
-      try {
-        const response = await axios.get(nextPage);
-        setPokemon([...pokemon, ...response.data.results]);
-        setNextPage(response.data.next);
-      } catch (e) {
-        setError(`Sorry, we couldn't load Pokemons`);
-      }
-    })();
-  };
 
   return (
     <TermContext.Provider value={setTerm}>
@@ -56,7 +54,13 @@ const Home = () => {
           {pokemon.length ? (
             pokemon
               .filter((data) => data.name.includes(term.toLowerCase()))
-              .map((item) => <Pokemon key={uuidv4()} pokemon={item} />)
+              .map((item) => (
+                <Pokemon
+                  key={item.id}
+                  name={item.name}
+                  image={item.sprites.other.dream_world.front_default}
+                />
+              ))
           ) : (
             <div className="col-12">
               <div className="alert alert-info">
@@ -66,7 +70,7 @@ const Home = () => {
           )}
         </div>
         <button
-          onClick={loadMore}
+          onClick={listPokemons}
           className="btn btn-primary ml-auto mr-auto d-block mb-5"
         >
           Load More
